@@ -108,8 +108,9 @@
 
             return nil;
         }
-        [self initWithContentsOfString:source error:error];
+        self = [self initWithContentsOfString:source error:error];
     }
+    return self;
 }
 
 - (id)initWithContentsOfString:(NSString *)content error:(NSError **)error
@@ -281,14 +282,14 @@
     FileInZipInfo *info = [archive getCurrentFileInZipInfo];
 
     ZipReadStream *stream = [archive readCurrentFileInZip];
-
-    NSData *data = [stream readDataOfLength:info.length];
+    NSMutableData* readBuffer = [[NSMutableData alloc] initWithLength:info.length];
+    [stream readDataWithBuffer:readBuffer];
 
     [stream finishedReading];
 
     [archive close];
 
-    return data;
+    return readBuffer;
 }
 
 @end
