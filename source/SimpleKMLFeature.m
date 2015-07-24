@@ -4,21 +4,21 @@
 //  Created by Justin R. Miller on 6/29/10.
 //  Copyright MapBox 2010-2013.
 //  All rights reserved.
-//  
+//
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are met:
-//  
+//
 //      * Redistributions of source code must retain the above copyright
 //        notice, this list of conditions and the following disclaimer.
-//  
+//
 //      * Redistributions in binary form must reproduce the above copyright
 //        notice, this list of conditions and the following disclaimer in the
 //        documentation and/or other materials provided with the distribution.
-//  
+//
 //      * Neither the name of MapBox, nor the names of its contributors may be
 //        used to endorse or promote products derived from this software
 //        without specific prior written permission.
-//  
+//
 //  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 //  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 //  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,6 +34,7 @@
 #import "SimpleKMLFeature.h"
 #import "SimpleKMLDocument.h"
 #import "SimpleKMLStyle.h"
+#import "SimpleKMLLookAt.h"
 
 @implementation SimpleKMLFeature
 
@@ -44,30 +45,34 @@
 @synthesize inlineStyle;
 @synthesize style;
 @synthesize document;
+@synthesize lookAt;
 
 - (id)initWithXMLNode:(CXMLNode *)node sourceURL:sourceURL error:(NSError **)error
 {
     self = [super initWithXMLNode:node sourceURL:sourceURL error:error];
-    
+
     if (self != nil)
     {
         for (CXMLNode *child in [node children])
         {
-            if ([[child name] isEqualToString:@"name"])
+            if ([[child name] isEqualToString:@"name"]) {
                 name = [[child stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-            
-            else if ([[child name] isEqualToString:@"description"])
+
+            } else if ([[child name] isEqualToString:@"description"]) {
                 featureDescription = [[child stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-            
-            else if ([[child name] isEqualToString:@"Style"])
+
+            } else if ([[child name] isEqualToString:@"Style"]) {
                 inlineStyle = [[SimpleKMLStyle alloc] initWithXMLNode:child sourceURL:sourceURL error:NULL];
-            
+
 #pragma mark TODO: we really need case folding here
-            else if ([[child name] isEqualToString:@"styleUrl"])
+            } else if ([[child name] isEqualToString:@"styleUrl"]) {
                 sharedStyleID = [[child stringValue] stringByReplacingOccurrencesOfString:@"#" withString:@""];
+            } else if ([[child name] isEqualToString:@"LookAt"]) {
+                lookAt = [[SimpleKMLLookAt alloc] initWithXMLNode:child sourceURL:sourceURL error:NULL];
+            }
         }
     }
-    
+
     return self;
 }
 
@@ -79,10 +84,10 @@
     //
     if (inlineStyle)
         return (SimpleKMLStyle *)inlineStyle;
-    
+
     else if (sharedStyle)
         return (SimpleKMLStyle *)sharedStyle;
-    
+
     return nil;
 }
 

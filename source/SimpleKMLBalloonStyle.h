@@ -39,5 +39,6 @@
 
 @property (nonatomic, strong, readonly) UIColor *backgroundColor;
 @property (nonatomic, strong, readonly) UIColor *textColor;
+@property (nonatomic, strong, readonly) NSString *text;
 
 @end

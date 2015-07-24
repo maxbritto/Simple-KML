@@ -37,6 +37,7 @@
 
 @synthesize backgroundColor;
 @synthesize textColor;
+@synthesize text;
 
 - (id)initWithXMLNode:(CXMLNode *)node sourceURL:sourceURL error:(NSError **)error
 {
@@ -60,6 +61,9 @@
                 NSString *colorString = [child stringValue];
                 
                 textColor = [SimpleKML colorForString:colorString];
+            }else if ([child kind] == CXMLElementKind && [[child name] isEqualToString:@"text"])
+            {
+                text = [child stringValue];
             }
         }
     }

@@ -1,8 +1,8 @@
 //
-//  SimpleKMLFeature.h
+//  SimpleKMLPair.m
 //
-//  Created by Justin R. Miller on 6/29/10.
-//  Copyright MapBox 2010-2013.
+//  Created by Maxime Britto on 7/15/2015.
+//  Copyright DEV2A 2015.
 //  All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without
@@ -30,24 +30,31 @@
 //  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 //  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-//  http://code.google.com/apis/kml/documentation/kmlreference.html#feature
+//  https://developers.google.com/kml/documentation/kmlreference#stylemap
 //
 
-#import "SimpleKMLObject.h"
+#import "SimpleKMLPair.h"
 
-@class SimpleKMLStyle;
-@class SimpleKMLDocument;
-@class SimpleKMLLookAt;
-
-@interface SimpleKMLFeature : SimpleKMLObject
-
-@property (nonatomic, strong, readonly) NSString *name;
-@property (nonatomic, strong, readonly) NSString *featureDescription;
-@property (nonatomic, strong, readonly) NSString *sharedStyleID;
-@property (nonatomic, strong, readonly) SimpleKMLStyle *inlineStyle;
-@property (nonatomic, strong, readonly) SimpleKMLStyle *style;
-@property (nonatomic, strong, readonly) SimpleKMLLookAt *lookAt;
-@property (nonatomic, weak) SimpleKMLStyle *sharedStyle;
-@property (nonatomic, weak) SimpleKMLDocument *document;
+@implementation SimpleKMLPair
+@synthesize key;
+@synthesize styleUrl;
+- (id)initWithXMLNode:(CXMLNode *)node sourceURL:sourceURL error:(NSError **)error
+{
+    self = [super initWithXMLNode:node sourceURL:sourceURL error:error];
+    
+    if (self != nil)
+    {
+        for (CXMLNode *child in [node children])
+        {
+            if ([[child name] isEqualToString:@"key"]) {
+                key = [[child stringValue] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            } else if ([[child name] isEqualToString:@"styleUrl"]) {
+                styleUrl = [[child stringValue] stringByReplacingOccurrencesOfString:@"#" withString:@""];
+            }
+        }
+    }
+    
+    return self;
+}
 
 @end

@@ -44,8 +44,8 @@
     
     if (self != nil)
     {
-        fill = NO;
-        outline = NO;
+        fill = YES;
+        outline = YES;
         
         for (CXMLNode *child in [node children])
         {

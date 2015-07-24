@@ -42,6 +42,7 @@
 // abstract class
 
 @property (nonatomic, strong, readonly) NSArray *sharedStyles;
+@property (nonatomic, strong, readonly) NSArray *sharedStyleMaps;
 
 - (SimpleKMLStyle *)sharedStyleWithID:(NSString *)styleID;
 

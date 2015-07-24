@@ -4,21 +4,21 @@
 //  Created by Justin R. Miller on 6/29/10.
 //  Copyright MapBox 2010-2013.
 //  All rights reserved.
-//  
+//
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are met:
-//  
+//
 //      * Redistributions of source code must retain the above copyright
 //        notice, this list of conditions and the following disclaimer.
-//  
+//
 //      * Redistributions in binary form must reproduce the above copyright
 //        notice, this list of conditions and the following disclaimer in the
 //        documentation and/or other materials provided with the distribution.
-//  
+//
 //      * Neither the name of MapBox, nor the names of its contributors may be
 //        used to endorse or promote products derived from this software
 //        without specific prior written permission.
-//  
+//
 //  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 //  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 //  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -45,15 +45,15 @@
 - (id)initWithXMLNode:(CXMLNode *)node sourceURL:sourceURL error:(NSError **)error
 {
     self = [super initWithXMLNode:node sourceURL:sourceURL error:error];
-    
+
     if (self != nil)
     {
         icon = nil;
-        
+
         UIImage *baseIcon   = nil;
         CGFloat baseScale   = kSimpleKMLIconStyleDefaultScale;
         CGFloat baseHeading = kSimpleKMLIconStyleDefaultHeading;
-        
+
         for (CXMLNode *child in [node children])
         {
 #pragma mark TODO: we should be case folding here
@@ -62,7 +62,7 @@
                 // find the first element node child of the root
                 //
                 CXMLNode *href = nil;
-                
+
                 for (CXMLNode *grandchild in [child children])
                 {
                     if ([grandchild kind] == CXMLElementKind)
@@ -71,69 +71,69 @@
                         break;
                     }
                 }
-                
+
                 if ( ! href)
                 {
-                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (no href specified for IconStyle Icon)" 
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (no href specified for IconStyle Icon)"
                                                                          forKey:NSLocalizedFailureReasonErrorKey];
-                    
+
                     if (error)
                         *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                    
+
                     return nil;
                 }
 
                 NSData *data = nil;
-                
+
                 if ([self cacheObjectForKey:[href stringValue]])
                     data = [self cacheObjectForKey:[href stringValue]];
-                
+
                 else
                 {
                     NSURL *imageURL = [NSURL URLWithString:[href stringValue]];
-                    
+
                     if ( ! imageURL)
                     {
-                        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon URL specified in IconStyle)" 
+                        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon URL specified in IconStyle)"
                                                                              forKey:NSLocalizedFailureReasonErrorKey];
-                        
+
                         if (error)
                             *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                        
+
                         return nil;
                     }
-                    
+
                     if ([imageURL scheme])
                         data = [NSData dataWithContentsOfURL:imageURL];
-                    
+
                     else if ([[sourceURL relativePath] hasSuffix:@".kmz"])
                         data = [SimpleKML dataFromArchiveAtPath:[sourceURL relativePath] withFilePath:[imageURL relativePath]];
-                    
+
                     if (data)
                         [self setCacheObject:data forKey:[href stringValue]];
-                    
+
                     else
                     {
-                        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon URL specified in IconStyle)" 
+                        NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon URL specified in IconStyle)"
                                                                              forKey:NSLocalizedFailureReasonErrorKey];
-                        
+
                         if (error)
                             *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                        
+
                         return nil;
                     }
                 }
-                
+
                 baseIcon = [UIImage imageWithData:data];
-                
+
                 if ( ! baseIcon)
                 {
-                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (unable to retrieve icon specified for IconStyle)" 
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (unable to retrieve icon specified for IconStyle)"
                                                                          forKey:NSLocalizedFailureReasonErrorKey];
-                    
+
                     if (error)
                         *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                    
+
                     return nil;
                 }
             }
@@ -143,12 +143,12 @@
 
                 if (baseScale <= 0)
                 {
-                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon scale specified in IconStyle)" 
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon scale specified in IconStyle)"
                                                                          forKey:NSLocalizedFailureReasonErrorKey];
-                    
+
                     if (error)
                         *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                    
+
                     return nil;
                 }
             }
@@ -158,26 +158,26 @@
 
                 if (baseHeading < 0 || baseHeading > 360)
                 {
-                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon heading specified in IconStyle)" 
+                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (invalid icon heading specified in IconStyle)"
                                                                          forKey:NSLocalizedFailureReasonErrorKey];
-                    
+
                     if (error)
                         *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                    
+
                     return nil;
                 }
             }
         }
-        
+
 #pragma mark TODO: rotate image according to heading
 #pragma mark TODO: read in parent ColorStyle color & auto-apply to icon
 
         CGFloat newWidth  = kSimpleKMLIconStyleBaseIconSize * baseScale;
         CGFloat newHeight = kSimpleKMLIconStyleBaseIconSize * baseScale;
-        
+
         icon = [baseIcon imageWithWidth:newWidth height:newHeight];
     }
-    
+
     return self;
 }
 
