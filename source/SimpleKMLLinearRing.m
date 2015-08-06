@@ -4,21 +4,21 @@
 //  Created by Justin R. Miller on 7/6/10.
 //  Copyright MapBox 2010-2013.
 //  All rights reserved.
-//  
+//
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are met:
-//  
+//
 //      * Redistributions of source code must retain the above copyright
 //        notice, this list of conditions and the following disclaimer.
-//  
+//
 //      * Redistributions in binary form must reproduce the above copyright
 //        notice, this list of conditions and the following disclaimer in the
 //        documentation and/or other materials provided with the distribution.
-//  
+//
 //      * Neither the name of MapBox, nor the names of its contributors may be
 //        used to endorse or promote products derived from this software
 //        without specific prior written permission.
-//  
+//
 //  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 //  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 //  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,112 +44,73 @@
     
     if (self != nil)
     {
+        NSString* errorMessage = nil;
         coordinates = nil;
+        NSCharacterSet* const coordinatesSeparator = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+        NSString* const coordinatePartsSeparator = @",";
+        NSMutableArray *parsedCoordinates = [NSMutableArray array];
         
         for (CXMLNode *child in [node children])
         {
             if ([[child name] isEqualToString:@"coordinates"])
             {
-                NSMutableArray *parsedCoordinates = [NSMutableArray array];
-                
-                NSArray *coordinateStrings = [[child stringValue] componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                [parsedCoordinates removeAllObjects];
+                NSArray *coordinateStrings = [[child stringValue] componentsSeparatedByCharactersInSet:coordinatesSeparator];
                 
                 for (__strong NSString *coordinateString in coordinateStrings)
                 {
-                    coordinateString = [coordinateString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-
                     if ([coordinateString length])
                     {
-                        // coordinates should not have whitespace
-                        //
-                        if ([[coordinateString componentsSeparatedByString:@" "] count] > 1)
-                        {
-                            NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (LinearRing coordinates have whitespace)" 
-                                                                                 forKey:NSLocalizedFailureReasonErrorKey];
-                            
-                            if (error)
-                                *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                            
-                            return nil;
-                        }
-                        
-                        NSArray *parts = [coordinateString componentsSeparatedByString:@","];
+                        NSArray *parts = [coordinateString componentsSeparatedByString:coordinatePartsSeparator];
                         
                         // there should be longitude, latitude, and optionally, altitude
-                        //
-                        if ([parts count] < 2 || [parts count] > 3)
+                        size_t partsCount = [parts count];
+                        if (partsCount == 2 || partsCount == 3)
                         {
-                            NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (Invalid number of LinearRing coordinates)" 
-                                                                                 forKey:NSLocalizedFailureReasonErrorKey];
+                            double longitude = [[parts objectAtIndex:0] doubleValue];
+                            double latitude  = [[parts objectAtIndex:1] doubleValue];
                             
-                            if (error)
-                                *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                            
-                            return nil;
+                            // there should be valid values for latitude & longitude
+                            //
+                            if (longitude >= -180 && longitude <= 180
+                                && latitude >= -90 && latitude <= 90) {
+                                CLLocation *coordinate = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
+                                [parsedCoordinates addObject:coordinate];
+                            } else {
+                                errorMessage = @"Improperly formed KML (Invalid LinearRing coordinates values)";
+                            }
                         }
-                        
-                        double longitude = [[parts objectAtIndex:0] doubleValue];
-                        double latitude  = [[parts objectAtIndex:1] doubleValue];
-                        
-                        // there should be valid values for latitude & longitude
-                        //
-                        if (longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90)
-                        {
-                            NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (Invalid LinearRing coordinates values)" 
-                                                                                 forKey:NSLocalizedFailureReasonErrorKey];
-                            
-                            if (error)
-                                *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                            
-                            return nil;
-                        }
-                        
-                        CLLocation *coordinate = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
-                        
-                        [parsedCoordinates addObject:coordinate]; 
                     }
                 }
                 
                 coordinates = [NSArray arrayWithArray:parsedCoordinates];
-                
-                // there should be four or more coordinates
-                //
-                if ([coordinates count] < 4)
-                {
-                    NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (LinearRing has less than four coordinates)" 
-                                                                         forKey:NSLocalizedFailureReasonErrorKey];
-                    
-                    if (error)
-                        *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-                    
-                    return nil;
-                }
             }
         }
         
-        if ( ! coordinates)
+        if ([coordinates count] >= 4)
         {
-            NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (LinearRing has no coordinates)" 
-                                                                 forKey:NSLocalizedFailureReasonErrorKey];
-            
-            if (error)
-                *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
-            
-            return nil;
+            // the first and last coordinate should be the same
+            CLLocation* firstCoordinates = [coordinates firstObject];
+            CLLocation* lastCoordinates = [coordinates lastObject];
+            if (firstCoordinates.coordinate.latitude  != lastCoordinates.coordinate.latitude ||
+                firstCoordinates.coordinate.longitude != lastCoordinates.coordinate.longitude)
+            {
+                errorMessage = @"Improperly formed KML (LinearRing does not form complete path)";
+            }
+        } else {
+            errorMessage = @"Improperly formed KML (LinearRing has less than four coordinates)";
         }
         
-        // the first and last coordinate should be the same
-        //
-        if (((CLLocation *)[coordinates objectAtIndex:0]).coordinate.latitude  != ((CLLocation *)[coordinates lastObject]).coordinate.latitude ||
-            ((CLLocation *)[coordinates objectAtIndex:0]).coordinate.longitude != ((CLLocation *)[coordinates lastObject]).coordinate.longitude)
-        {
-            NSDictionary *userInfo = [NSDictionary dictionaryWithObject:@"Improperly formed KML (LinearRing does not form complete path)" 
-                                                                 forKey:NSLocalizedFailureReasonErrorKey];
-            
-            if (error)
+        
+        
+        if (errorMessage != nil) {
+            if (error) {
+                NSDictionary *userInfo = [NSDictionary dictionaryWithObject:errorMessage
+                                                                     forKey:NSLocalizedFailureReasonErrorKey];
                 *error = [NSError errorWithDomain:SimpleKMLErrorDomain code:SimpleKMLParseError userInfo:userInfo];
+            }
             
-            return nil;
+            self = nil;
         }
     }
     
