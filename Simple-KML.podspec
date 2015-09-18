@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "Simple-KML"
-  s.version      = "0.1.0"
+  s.version      = "0.1.1"
   s.summary      = "Simple KML is a simple & lightweight parsing library for KML written in Objective-C for the iOS platform. "
   s.homepage     = "https://github.com/maxbritto/Simple-KML"
 
